@@ -51,6 +51,8 @@ public class CheckoutServiceImpl implements CheckoutService {
         order.setBillingAddress(purchase.getBillingAddress());
         order.setShippingAddress(purchase.getShippingAddress());
 
+        order.setPaymentId(purchase.getPaymentId());
+
         // populate customer with order
         Customer customer = purchase.getCustomer();
 
@@ -69,7 +71,7 @@ public class CheckoutServiceImpl implements CheckoutService {
         customerRepository.save(customer);
 
         // return a response
-        return new PurchaseResponse(orderTrackingNumber);
+        return new PurchaseResponse(orderTrackingNumber, purchase.getPaymentId());
     }
 
     private String generateOrderTrackingNumber() {

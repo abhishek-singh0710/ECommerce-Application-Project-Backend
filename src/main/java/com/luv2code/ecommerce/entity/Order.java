@@ -68,6 +68,8 @@ public class Order {
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "billing_address_id", referencedColumnName = "id")    // We will name the joining column as the billing_address_id and the referencedColumn will be the id in the Address Table
     private Address billingAddress;
+
+    private String paymentId;
  
     // For future use if required to add an item to an order
     public void add(OrderItem item) {
