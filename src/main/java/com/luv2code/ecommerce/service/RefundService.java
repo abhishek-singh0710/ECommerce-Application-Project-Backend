@@ -1,15 +1,19 @@
 package com.luv2code.ecommerce.service;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.luv2code.ecommerce.dao.OrderRepository;
+import com.luv2code.ecommerce.dao.RefundRepository;
 import com.luv2code.ecommerce.dto.Refund;
 import com.luv2code.ecommerce.dto.RefundResponse;
 import com.luv2code.ecommerce.entity.Order;
+import com.luv2code.ecommerce.entity.OrderItem;
 import com.razorpay.Payment;
 import com.razorpay.RazorpayClient;
 
@@ -21,6 +25,9 @@ public class RefundService {
 
     @Autowired
     OrderRepository orderRepository;
+
+    @Autowired
+    RefundRepository refundRepository;
 
     public RefundResponse processRefund(Refund refund) {
 
@@ -48,6 +55,31 @@ public class RefundService {
             responseToReturn.setAmount(refundResponse.get("amount"));
             responseToReturn.setId(refundResponse.get("id"));
             responseToReturn.setSpeed("normal");
+
+            com.luv2code.ecommerce.entity.Refund refundEntry = new com.luv2code.ecommerce.entity.Refund();
+            refundEntry.setBillingAddress(order.getBillingAddress());
+            refundEntry.setOrderTrackingNumber(order.getOrderTrackingNumber());
+            refundEntry.setPaymentId(order.getPaymentId());
+            refundEntry.setShippingAddress(order.getShippingAddress());
+            refundEntry.setStatus("REFUNDED");
+            refundEntry.setTotalPrice(order.getTotalPrice());
+            refundEntry.setTotalQuantity(order.getTotalQuantity());
+            refundEntry.setCustomer(order.getCustomer());
+            // refundEntry.setOrderItems(order.getOrderItems());
+            Set<OrderItem> orderItems = new HashSet<>();
+            for(OrderItem item: order.getOrderItems()) {
+                OrderItem orderItem = new OrderItem();
+                orderItem.setImageUrl(item.getImageUrl());
+                orderItem.setProductId(item.getProductId());
+                orderItem.setQuantity(item.getQuantity());
+                orderItem.setUnitPrice(item.getUnitPrice());
+                orderItems.add(orderItem);
+            }
+            refundEntry.setOrderItems(orderItems);
+            refundEntry.setDateCreated(order.getDateCreated());
+            refundEntry.setLastUpdated(order.getLastUpdated());
+            refundRepository.save(refundEntry);
+            orderRepository.delete(order);
 
             // return responseToReturn;
         } catch (Exception e) {
