@@ -6,14 +6,19 @@ import java.util.UUID;
 import javax.transaction.Transactional;
 
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.luv2code.ecommerce.dao.CustomerRepository;
+import com.luv2code.ecommerce.dao.InventoryRepository;
+import com.luv2code.ecommerce.dao.ProductRepository;
 import com.luv2code.ecommerce.dto.Purchase;
 import com.luv2code.ecommerce.dto.PurchaseResponse;
 import com.luv2code.ecommerce.entity.Customer;
+import com.luv2code.ecommerce.entity.Inventory;
 import com.luv2code.ecommerce.entity.Order;
 import com.luv2code.ecommerce.entity.OrderItem;
+import com.luv2code.ecommerce.entity.Product;
 import com.luv2code.ecommerce.entity.TransactionDetails;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
@@ -23,12 +28,15 @@ public class CheckoutServiceImpl implements CheckoutService {
 
     private CustomerRepository customerRepository;
 
+    private ProductRepository productRepository;
+
     private static final String KEY = "rzp_test_8gUymVZqeZ4DM5";
     private static final String SECRET = "sHM71fTcTJ6vosNZzHE9VXBi";
     private static final String CURRENCY = "INR";
 
-    public CheckoutServiceImpl(CustomerRepository customerRepository) {
+    public CheckoutServiceImpl(CustomerRepository customerRepository, ProductRepository productRepository) {
         this.customerRepository = customerRepository;
+        this.productRepository = productRepository;
     }
 
     @Override
@@ -46,6 +54,12 @@ public class CheckoutServiceImpl implements CheckoutService {
         Set<OrderItem> orderItems = purchase.getOrderItems();
         orderItems.forEach(item -> order.add(item)); // Using the add function which we created to add the items to the
                                                      // order
+
+        for(OrderItem item: orderItems) {
+            Product product = productRepository.findById(item.getProductId()).get();
+            product.setUnitsInStock(product.getUnitsInStock() - item.getQuantity());
+            productRepository.save(product);
+        }
 
         // populate order with billingAddress and shippingAddress
         order.setBillingAddress(purchase.getBillingAddress());
